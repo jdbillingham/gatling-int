@@ -46,6 +46,7 @@ trait OpenAMSimulation extends Simulation {
       .inferHtmlResources()
       .acceptHeader( """*/*""")
       .wsBaseUrl("ws://" + host + ":" + port)
+      .shareConnections
     if (caching == "false") {
       httpProtocol = httpProtocol.disableCaching
     }
