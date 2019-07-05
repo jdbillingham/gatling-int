@@ -120,7 +120,7 @@ trait OpenAMSimulation extends Simulation {
       resource_version = resource_version, root_url = root_url)
     val queryParamMap: mutable.Map[String, Any] = mutable.Map[String, Any]()
     if (resource_version >= "2.0") {
-      queryParamMap.put("realm", realm)
+      //queryParamMap.put("realm", realm)
     }
     http(requestName)
       .get(url)
@@ -552,7 +552,7 @@ trait OpenAMSimulation extends Simulation {
     * @param tokenId the tokenId of the session
     */
   def getSessionInfo(tokenId: String, root_url: String = ""): HttpRequestBuilder = {
-    jsonAction(requestName = "GetSessionInfo", action = "getSessionInfo", category = "sessions", paramName = "tokenId",
+    jsonAction(requestName = "GetSessionInfo", action = "getSessionInfo", category = "sessions",
       resourceName = tokenId, root_url = root_url)
       .check(jsonPath("$.maxIdleExpirationTime").saveAs("maxIdleExpirationTime"))
       .check(jsonPath("$.latestAccessTime").lte("${maxIdleExpirationTime}"))
