@@ -614,24 +614,16 @@ trait OpenAMSimulation extends Simulation {
     }
   }
 
-  def evaluatePolicy(resourceName: String, tokenId: String, adminTokenId: String, legacy: String,
+  def evaluatePolicy(resourceName: String, tokenId: String,
                      method: String = "GET", requestName: String = "EvaluatePolicy"): ChainBuilder = {
-    exec(addSSOCookie(adminTokenId))
-      .doIfOrElse(session => legacy.equals("false")) {
         exec(http(requestName)
-          .post(getEvaluateURL(realm))
+          .post(s"""/json/realms/root/policies?_action=evaluate""")
           .headers(Map("Content-Type" -> "application/json"))
           .headers(policyApiVersionHeader)
           .asJson
           .body(getPolicyRequest(resourceName, tokenId))
           .check(jsonPath(s"$$[0].actions.${method}").is("true"))   // dollar sign is escaped as $$
           .check(status.is(200)))
-      } {
-        exec(http(s"${requestName}_Legacy")
-          .get("/openam/identity/authorize")
-          .queryParamMap(Map("uri" -> resourceName, "subjectid" -> tokenId))
-          .check(status.is(200)))
-      }
   }
 
   def getPolicyRequest(resourceName: String, tokenId: String):
@@ -641,10 +633,7 @@ trait OpenAMSimulation extends Simulation {
   "resources": [
     "$resourceName"
    ],
-  "application": "$application",
-  "subject": {
-    "ssoToken": "$tokenId"
-  }
+  "application": "$application"
 }"""
 
     StringBody(policy)
@@ -653,12 +642,12 @@ trait OpenAMSimulation extends Simulation {
   def getEvaluateURL(realm: String): session.Expression[String] = {
     if(!realm.equals("/")) {
       if(realm.startsWith("/")) {
-        s"""/openam/json/realms$realm/policies?_action=evaluate"""
+        s"""/json/realms$realm/policies?_action=evaluate"""
       } else {
-        s"""/openam/json/realms/$realm/policies?_action=evaluate"""
+        s"""/json/realms/$realm/policies?_action=evaluate"""
       }
     } else {
-      "/openam/json/policies?_action=evaluate"
+      "/json/policies?_action=evaluate"
     }
   }
 }
