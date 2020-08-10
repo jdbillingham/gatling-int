@@ -29,9 +29,10 @@ trait OpenAMSimulation extends Simulation {
   val am_version = System.getProperty("am_version", "14.0.0")
   val resource_version = System.getProperty("resource_version", "2.0")
   val use_trees = System.getProperty("use_trees", "false")
+  val openam_prefix = System.getProperty("openam_prefix", "")
   val session_uid_generated = System.getProperty("session_uid_generated", "false").toBoolean
   val random = new util.Random
-  val service_name = System.getProperty("service_name", "SIWRS1")
+  val service_name = System.getProperty("service_name", "adminconsoleservice")
   val userFeeder = Iterator.continually(Map(
     """username""" -> ("""user.""" + random.nextInt(userPoolSize).toString),
     """password""" -> "password")
@@ -92,9 +93,17 @@ trait OpenAMSimulation extends Simulation {
     var url = root_url
     var _resourceName = resourceName
     if (resource_version < "2.0") {
-      url += "/json%s%s".format(realm2url(realm), category)
+      if (openam_prefix == "") {
+        url += "/json%s%s".format(realm2url(realm), category)
+      } else {
+        url += "/"+openam_prefix+"/json%s%s".format(realm2url(realm), category)
+      }
     } else {
-      url += "/json/%s".format(category)
+        if (openam_prefix == "") {
+          url += "/json/%s".format(category)
+        } else {
+          url += "/"+openam_prefix+"/json%s%s".format(realm2url(realm), category)
+        }
       if (category == "sessions") {
         _resourceName = ""
       }
@@ -172,7 +181,7 @@ trait OpenAMSimulation extends Simulation {
     }
     if (use_trees == "true") {
       queryParamMap.put("authIndexType", "service")
-      queryParamMap.put("authIndexValue", "Example")
+      queryParamMap.put("authIndexValue", "adminconsoleservice")
     }
     tryMax(2, counter = "try") {
       exec(flushCookieJar)
@@ -617,13 +626,18 @@ trait OpenAMSimulation extends Simulation {
   def evaluatePolicy(resourceName: String, tokenId: String,
                      method: String = "GET", requestName: String = "EvaluatePolicy"): ChainBuilder = {
         exec(http(requestName)
-          .post(s"""/json/realms/root/policies?_action=evaluate""")
+          .post(s"""/openam/json/realms/root/policies?_action=evaluate""")
           .headers(Map("Content-Type" -> "application/json"))
           .headers(policyApiVersionHeader)
           .asJson
           .body(getPolicyRequest(resourceName, tokenId))
-          .check(jsonPath(s"$$[0].actions.${method}").is("true"))   // dollar sign is escaped as $$
+          //.check(jsonPath(s"$$[0].actions.${method}").is("true"))   // dollar sign is escaped as $$
           .check(status.is(200)))
+  }
+
+// Multiple resources to evaluate
+  def evaluatePolicyMultipleResources(resourceNames: Array[String], tokenId: String): ChainBuilder = {
+        exec(evaluatePolicy(resourceNames.mkString("\",\""),tokenId))
   }
 
   def getPolicyRequest(resourceName: String, tokenId: String):
