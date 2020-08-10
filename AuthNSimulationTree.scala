@@ -109,8 +109,8 @@ trait AuthNTreeSimulation extends OpenAMSimulation {
     exec(flushCookieJar)
       .exec(restLoginInitiate(queryParamMap, url))
       .pause(pause seconds)
-      .exec(restLoginUsernamePasswordPageNodeCallback(authId = "${authId}", username, password, queryParamMap, url))
-      .pause(pause seconds)
+      //.exec(restLoginUsernamePasswordPageNodeCallback(authId = "${authId}", username, password, queryParamMap, url))
+      //.pause(pause seconds)
       .exitHereIfFailed
   }
 
