@@ -8,6 +8,7 @@ class getAuthN extends AuthNTreeSimulation {
     .during(duration) {
       feed(userFeeder)
         .exec(restLogin("${username}", "${password}"))
+        .pause(pause seconds)
         .doIf(session => logoutPercent.>(0)) {
           randomSwitch {
             logoutPercent -> restLogout()
