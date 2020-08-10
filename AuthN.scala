@@ -7,7 +7,7 @@ class getAuthN extends AuthNTreeSimulation {
   val scn = scenario("getSessionInfo")
     .during(duration) {
       feed(userFeeder)
-        .exec(usernamePasswordRestLoginPageNode("${username}", "${password}", realm))
+        .exec(restLogin("${username}", "${password}"))
         .doIf(session => logoutPercent.>(0)) {
           randomSwitch {
             logoutPercent -> restLogout()
