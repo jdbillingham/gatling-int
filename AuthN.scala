@@ -4,7 +4,7 @@ import io.gatling.core.Predef._
 import scala.concurrent.duration._
 class getAuthN extends AuthNTreeSimulation {
 
-  val scn = scenario("getSessionInfo")
+  val scn = scenario("getAuthN")
     .during(duration) {
       feed(userFeeder)
         .exec(restLogin("${username}", "${password}"))

@@ -33,6 +33,8 @@ trait OpenAMSimulation extends Simulation {
   val session_uid_generated = System.getProperty("session_uid_generated", "false").toBoolean
   val random = new util.Random
   val service_name = System.getProperty("service_name", "adminconsoleservice")
+  val loop = Integer.getInteger("loop", 1).toInt
+
   val userFeeder = Iterator.continually(Map(
     """username""" -> ("""user.""" + random.nextInt(userPoolSize).toString),
     """password""" -> "password")
@@ -41,7 +43,7 @@ trait OpenAMSimulation extends Simulation {
   /**
     * An abstract super class (i.e. with no simulation) to provide methods to easily build load for OpenAM
     */
-  def getHttpProtocol(protocol: String, host: String, port: String, caching: String = "true"): HttpProtocolBuilder = {
+  def getHttpProtocol(protocol: String, host: String, port: String, caching: String = "false"): HttpProtocolBuilder = {
     var httpProtocol = http.baseUrl(protocol +"://" + host + ":" + port)
       .contentTypeHeader("application/x-www-form-urlencoded")
       .inferHtmlResources()
@@ -136,6 +138,57 @@ trait OpenAMSimulation extends Simulation {
       .get(url)
       .queryParamMap(queryParamMap.toMap)
       .headers(getAcceptAPIVersion(resource_version))
+  }
+
+  /**
+    * Update a resource using the REST API - PATCH
+    * Hard coded to update password
+    * @param requestName  the name of the request to be used for the report
+    * @param category     resource category such as users, sessions
+    * @param resourceName the name of the resource
+    * @param realm        the real (default: /)
+    * @param root_url     an optional prefix to be added to the url
+    * @return
+    */
+  def jsonUpdate(requestName: String, category: String, resourceName: String, realm: String = "/",
+               resource_version: String = resource_version, root_url: String = ""): HttpRequestBuilder = {
+    val url = getJsonURL(category = category, resourceName = resourceName, realm = realm,
+      resource_version = resource_version, root_url = root_url)
+    val queryParamMap: mutable.Map[String, Any] = mutable.Map[String, Any]()
+    if (resource_version >= "2.0") {
+      //queryParamMap.put("realm", realm)
+    }
+    http(requestName)
+      .patch(url)
+      .queryParamMap(queryParamMap.toMap)
+      .body(StringBody("""[{ "operation":"replace", "field" : "/userPassword", "value" :  "password"}]""")).asJson
+      .headers(getAcceptAPIVersion("4.0"))
+  }
+
+  /**
+    * WRITE a resource using the REST API - PUT
+    * Hard coded to update password
+    * @param requestName  the name of the request to be used for the report
+    * @param category     resource category such as users, sessions
+    * @param resourceName the name of the resource
+    * @param realm        the real (default: /)
+    * @param root_url     an optional prefix to be added to the url
+    * @return
+    */
+  def jsonWrite(requestName: String, category: String, resourceName: String, realm: String = "/",
+               resource_version: String = resource_version, root_url: String = ""): HttpRequestBuilder = {
+    val url = getJsonURL(category = category, resourceName = resourceName, realm = realm,
+      resource_version = resource_version, root_url = root_url)
+    val queryParamMap: mutable.Map[String, Any] = mutable.Map[String, Any]()
+    if (resource_version >= "2.0") {
+      //queryParamMap.put("realm", realm)
+    }
+    http(requestName)
+      .put(url)
+      .queryParamMap(queryParamMap.toMap)
+      .body(StringBody("""{"userPassword":"password","mail":"test@example.com"}""")).asJson
+      .headers(getAcceptAPIVersion("4.0"))
+      .header("If-None-Match", "*")
   }
 
   def jsonAction(requestName: String, action: String, category: String, paramName: String = "",
@@ -487,6 +540,32 @@ trait OpenAMSimulation extends Simulation {
     */
   def readUser(username: String, realm: String = "/", root_url: String = ""): HttpRequestBuilder = {
     jsonRead(requestName = "ReadUser", category = "users", resourceName = username, realm = realm, root_url = root_url)
+      .check(jsonPath("$.username").is(username)
+      )
+  }
+
+  /**
+    * Update a user profile using REST API - PATCH
+    *
+    * @param username the name of the user
+    * @param realm    the realm where to get the user
+    * @return
+    */
+  def updateUser(username: String, realm: String = "/", root_url: String = ""): HttpRequestBuilder = {
+    jsonUpdate(requestName = "updateUser", category = "users", resourceName = username, realm = realm, root_url = root_url)
+      .check(jsonPath("$.username").is(username)
+      )
+  }
+
+  /**
+    * Write a user profile using REST API - PUT
+    *
+    * @param username the name of the user
+    * @param realm    the realm where to get the user
+    * @return
+    */
+  def writeUser(username: String, realm: String = "/", root_url: String = ""): HttpRequestBuilder = {
+    jsonWrite(requestName = "writeUser", category = "users", resourceName = username, realm = realm, root_url = root_url)
       .check(jsonPath("$.username").is(username)
       )
   }
