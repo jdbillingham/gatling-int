@@ -8,10 +8,11 @@ class createUserAsAdmin extends AuthNTreeSimulation {
 
   val scn = scenario("createUserAsAdmin")
         .exec(restLogin("amadmin", "4b1bofm3awguqq11gb0ero3hzhkhatcj"))
-        .repeat(loop) {
-        feed(userFeeder)
-            .exec(writeUser("Z${username}", realm))
-        }
+        .during(duration) {
+          feed(userFeeder)
+              .exec(writeUser("Z${username}", realm))
+              .pause(pause seconds)
+          }
 
   setUp(scn.inject(rampUsers(concurrency) during (warmup seconds))).protocols(httpProtocol).exponentialPauses
 }

@@ -6,10 +6,10 @@ class Authorize extends OAuth2Simulation {
 
   val scn = scenario("Authorize")
     // request a new access_token
-    .feed(userFeeder)
-    .exec(restLogin("${username}", "${password}"))
     .during(duration) {
-      exec(authorize(oauth2_id, redirect_uri, scope, realm, "authorization_code"))
+      .feed(userFeeder)
+      .exec(restLogin("${username}", "${password}"))
+      .exec(authorize(oauth2_id, redirect_uri, scope, realm, "authorization_code"))
       .exec(accessToken2("${authorization_code}", oauth2_id, oauth2_pwd, redirect_uri, realm))
       .repeat(loop) {
         tokenInfo("${access_token}")
