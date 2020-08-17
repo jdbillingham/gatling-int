@@ -101,7 +101,7 @@ trait OAuth2Simulation extends OpenAMSimulation {
       .basicAuth(oauth2_id, oauth2_pwd)
       .header("Cache-Control", "no-cache")
       .check(jsonPath("$.access_token").find.saveAs("access_token"))
-      .check(jsonPath("$.id_token").find.saveAs(id_token_var_name))
+      //.check(jsonPath("$.id_token").find.saveAs(id_token_var_name))
     )
   }
 
